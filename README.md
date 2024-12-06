@@ -1,4 +1,4 @@
-Health Check Pro is a user-friendly health website built using the MERN stack
+# Health Check Pro is a user-friendly health website built using the MERN stack
 
 ## Table of Contents 
 1. [Project Setup](#project-setup)
