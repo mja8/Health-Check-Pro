@@ -1,30 +1,50 @@
-import './App.css';
-import Navbar from './components/Navbar';
-// import Routes from "./Routes"
-import { BrowserRouter as Router,Routes , Route } from 'react-router-dom';
-import HeroSection from './components/HeroSection';
-import ArticleSection from './components/ArticleSection';
-import InputSection from './components/InputSection';
-import QuoteSection from './components/QuoteSection';
-import Articles from './components/ArticleSection';
-import Assessment from './pages/AssessmentPage';
-import Dashboard from './pages/Dashboard';
+import { useDispatch } from 'react-redux';
+import './App.css'
+import Routes from "./Routes";
+import { jwtDecode } from "jwt-decode";
+import { clearUser, setUser } from './features/user/userSlice';
+import { useCallback, useEffect } from 'react';
 
 function App() {
+  const dispatch = useDispatch();
+
+  const decodeToken = (token) => {
+    try {
+      const decoded = jwtDecode(token);
+      return decoded;
+    } catch(error) {
+      console.error("Invalid Token", error);
+      return null;
+    }
+  }
+
+  const isTokenExpired = useCallback((token) => {
+    const decoded = decodeToken(token);
+    if(!decoded) return true; // token expired
+
+    const currentTime = Math.floor(Date.now() / 1000);
+    return decoded.exp < currentTime;
+  }, [])
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    console.log({token})
+
+    if(token && !isTokenExpired(token)) {
+      const user = decodeToken(token);
+      console.log({user});
+      dispatch(setUser(user));
+    } else {
+      localStorage.removeItem("token");
+      dispatch(clearUser());
+    }
+  }, [dispatch, isTokenExpired])
+
   return (
-    <Router>
-      <Navbar />
-      <Routes>
-        <Route path="/articles" element={<Articles />} />
-        <Route path="/assessment" element={<Assessment />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-      </Routes>
-      <HeroSection />
-      <InputSection />
-      <QuoteSection />
-      <ArticleSection />
-    </Router>
-  );
+    <>
+      <Routes />
+    </>
+  )
 }
 
-export default App;
+export default App

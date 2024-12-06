@@ -1,9 +1,14 @@
 import User from "../models/User.js";
+import jwt from "jsonwebtoken";
+import { jwtSecret } from "../config/jwt.js";
 
 export const isAdmin = async (req, res, next) => {
   try {
     const userId = req.headers.userid;
     const user = await User.findById(userId);
+
+    if(!user) 
+      return res.status(404).json({ error: "User not found!" });
 
     if (user && user.isAdmin) {
       req.user = user;
@@ -16,21 +21,21 @@ export const isAdmin = async (req, res, next) => {
   }
 };
 
-export const isAuthenticated = async (req, res, next) => {
+export const authentiateToken = async (req, res, next) => {
   try {
-    const userId = req.headers.userid;
-    console.log({userId});
-    const user = await User.findById(userId);
-    console.log(`userId and user: ${userId}, ${user}`);
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1];
 
-    if (user) {
-      console.log(`${userId} authenticated`)
+    if(!token)
+      return res.status(401).json({ message: "Access token required!" });
+
+    jwt.verify(token, jwtSecret, async(err, user) => {
+      if(err) 
+        return res.status(403).json({ message: "Invalid token" });
+      
       req.user = user;
       next();
-    } else {
-      console.log(`${userId} Not authenticated`)
-      res.status(401).json({ message: "Not Authorized!" });
-    }
+    })
   } catch (error) {
     console.log(`Server: not authenticated`)
     res.status(401).json({ message: "Not Authorized!" });
